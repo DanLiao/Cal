@@ -156,6 +156,10 @@ class DisplayManager {
           history    - 显示历史        record     - 保存历史到文件
           vars       - 显示变量        ans        - 显示上次结果
           quit       - 退出程序
+        
+        \(ANSIColor.yellow)快捷键:\(ANSIColor.reset)
+          ↑ ↓ 箭头键 - 浏览历史命令    ← → 箭头键 - 移动光标
+          Ctrl+C     - 退出程序
         """)
     }
     
