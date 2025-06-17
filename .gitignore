@@ -1,0 +1,77 @@
+# Swift Package Manager
+.build/
+Packages/
+Package.resolved
+.swiftpm/
+
+# Xcode
+xcuserdata/
+*.xcworkspace/
+*.xcodeproj/
+DerivedData/
+
+# macOS系统文件
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Swift构建产物
+*.app
+*.ipa
+*.xcarchive
+
+# 临时文件
+*.swp
+*.swo
+*~
+
+# 记录文件夹中的实际记录，但保留文件夹
+record/*.txt
+
+# 测试输出文件
+test_output.txt
+test_input.txt
+debug_log.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+
+# App Bundle (compiled)
+Cal.app/
+
+# Generated Python script for icon
+generate_van_gogh_calculator_icon.py 

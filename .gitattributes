@@ -1,0 +1,24 @@
+# 设置默认行为
+* text=auto
+
+# Swift源文件
+*.swift text diff=swift
+
+# Shell脚本
+*.sh text eol=lf
+build_app.sh text eol=lf
+
+# XML和plist文件
+*.plist text diff=plist
+*.xml text diff=xml
+
+# 文档文件
+*.md text diff=markdown
+LICENSE text
+
+# 二进制文件
+*.icns binary
+*.app binary
+
+# 字符串资源文件
+*.strings text diff=strings 

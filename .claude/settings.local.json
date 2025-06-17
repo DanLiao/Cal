@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm:*)",
+      "Bash(./build_app.sh:*)",
+      "Bash(ls:*)",
+      "Bash(plutil:*)",
+      "Bash(sudo rm:*)",
+      "Bash(killall:*)",
+      "Bash(touch:*)"
+    ],
+    "deny": []
+  }
+}
