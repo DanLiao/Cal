@@ -179,6 +179,26 @@ class VariablesCommand: Command {
     var description: String { "显示所有定义的变量" }
 }
 
+class DrawCommand: Command {
+    private let functionExpression: String
+    private let calculatorEngine: CalculatorEngine
+    private let displayManager: DisplayManager
+    
+    init(functionExpression: String, calculatorEngine: CalculatorEngine, displayManager: DisplayManager) {
+        self.functionExpression = functionExpression
+        self.calculatorEngine = calculatorEngine
+        self.displayManager = displayManager
+    }
+    
+    func execute() throws -> CommandResult {
+        let plotter = FunctionPlotter(calculator: calculatorEngine)
+        let plot = try plotter.plotFunction(functionExpression)
+        return .display(content: plot)
+    }
+    
+    var description: String { "绘制函数图像: \(functionExpression)" }
+}
+
 class CalculationCommand: Command {
     private let expression: String
     private let calculatorEngine: CalculatorEngine
@@ -215,18 +235,28 @@ class CommandFactory {
     }
     
     func createCommand(from input: String) -> Command {
-        let trimmedInput = input.trimmed.lowercased()
+        let trimmedInput = input.trimmed
+        let lowercaseInput = trimmedInput.lowercased()
+        
+        // Check for draw command - supports draw(y=f(x)) format
+        if lowercaseInput.hasPrefix("draw(") && lowercaseInput.hasSuffix(")") {
+            return DrawCommand(
+                functionExpression: trimmedInput,
+                calculatorEngine: calculatorEngine,
+                displayManager: displayManager
+            )
+        }
         
         // Check for built-in commands
         for commandType in CommandType.allCases {
-            if commandType.aliases.contains(trimmedInput) {
+            if commandType.aliases.contains(lowercaseInput) {
                 return createBuiltInCommand(type: commandType)
             }
         }
         
         // Default to calculation command
         return CalculationCommand(
-            expression: input.trimmed,
+            expression: trimmedInput,
             calculatorEngine: calculatorEngine,
             historyManager: historyManager
         )
@@ -296,7 +326,8 @@ class CommandProcessor {
             return true
             
         } catch {
-            displayManager.showError(CalculatorError.invalidExpression(message: error.localizedDescription))
+            // 捕获所有未处理的异常
+            displayManager.showError(CalculatorError.invalidExpression(message: "输入格式错误，输入 help 查看帮助"))
             return true
         }
     }

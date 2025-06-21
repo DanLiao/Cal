@@ -151,11 +151,16 @@ class DisplayManager {
         \(ANSIColor.yellow)科学计数法:\(ANSIColor.reset)
           1.5e3      - 1500            2E-4       - 0.0002
         
+        \(ANSIColor.yellow)函数绘图:\(ANSIColor.reset)
+          draw(y=x^2)     - 绘制二次函数
+          draw(y=sin(x))  - 绘制正弦函数
+          draw(y=2*x+1)   - 绘制线性函数
+        
         \(ANSIColor.yellow)命令:\(ANSIColor.reset)
           help       - 显示帮助        clear      - 清屏
           history    - 显示历史        record     - 保存历史到文件
           vars       - 显示变量        ans        - 显示上次结果
-          quit       - 退出程序
+          draw(y=f(x)) - 绘制函数图像  quit       - 退出程序
         
         \(ANSIColor.yellow)快捷键:\(ANSIColor.reset)
           ↑ ↓ 箭头键 - 浏览历史命令    ← → 箭头键 - 移动光标

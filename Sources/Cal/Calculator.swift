@@ -174,7 +174,7 @@ struct FactorialFunction: MathFunctionStrategy {
 // MARK: - Expression Parser
 class ExpressionParser {
     private let functions: [String: MathFunctionStrategy]
-    private let constants: [String: Double]
+    internal let constants: [String: Double]
     private let variableManager: VariableStorageManager
     
     // Pre-compiled regex patterns for performance
@@ -247,12 +247,43 @@ class ExpressionParser {
         // Handle power operator (^ to pow)
         expr = expr.replacingOccurrences(of: "^", with: "**")
         
-        // Create and evaluate NSExpression
-        let nsExpression = NSExpression(format: expr)
+        // Create and evaluate NSExpression with comprehensive error handling
+        let nsExpression: NSExpression
+        let result: NSNumber
         
-        guard let result = nsExpression.expressionValue(with: nil, context: nil) as? NSNumber else {
-            throw CalculatorError.invalidExpression(message: "无法计算表达式")
+        // Check for various problematic patterns that NSExpression can't handle
+        let problematicPatterns = [
+            // Single equals (assignment, not comparison)
+            "^[a-zA-Z][a-zA-Z0-9_]*\\s*=\\s*[^=].*",
+            // Invalid operators
+            "\\+\\+|\\-\\-|\\*\\*\\*|///|\\^\\^",
+            // Invalid comparisons with undefined variables
+            "[a-zA-Z][a-zA-Z0-9_]*\\s*(==|!=|>=|<=)\\s*[a-zA-Z][a-zA-Z0-9_]*",
+            // Malformed expressions
+            "^\\s*[+\\-*/^=]|[+\\-*/^=]\\s*$",
+            ".*[+\\-*/^=]{2,}.*"
+        ]
+        
+        for pattern in problematicPatterns {
+            if let regex = try? NSRegularExpression(pattern: pattern, options: []) {
+                let range = NSRange(location: 0, length: expr.utf16.count)
+                if regex.firstMatch(in: expr, options: [], range: range) != nil {
+                    throw CalculatorError.invalidExpression(message: "表达式格式错误，输入 help 查看帮助")
+                }
+            }
         }
+        
+        // Additional simple checks
+        if expr.contains("=") && !expr.contains("==") && !expr.contains("!=") && !expr.contains(">=") && !expr.contains("<=") {
+            throw CalculatorError.invalidExpression(message: "表达式格式错误，输入 help 查看帮助")
+        }
+        
+        nsExpression = NSExpression(format: expr)
+        
+        guard let evaluatedResult = nsExpression.expressionValue(with: nil, context: nil) as? NSNumber else {
+            throw CalculatorError.invalidExpression(message: "无法计算表达式，输入 help 查看帮助")
+        }
+        result = evaluatedResult
         
         let doubleResult = result.doubleValue
         
@@ -268,7 +299,7 @@ class ExpressionParser {
         return doubleResult
     }
     
-    private func processScientificNotation(_ expression: String) throws -> String {
+    internal func processScientificNotation(_ expression: String) throws -> String {
         let matches = scientificNotationRegex.matches(in: expression, options: [], range: NSRange(location: 0, length: expression.utf16.count))
         
         var result = expression
@@ -288,7 +319,7 @@ class ExpressionParser {
         return result
     }
     
-    private func fixDecimalFormats(_ expression: String) throws -> String {
+    internal func fixDecimalFormats(_ expression: String) throws -> String {
         var expr = expression
         
         // Fix "2." format to "2.0"
@@ -349,7 +380,7 @@ class ExpressionParser {
         }
     }
     
-    private func processFunctions(_ expression: String) throws -> String {
+    internal func processFunctions(_ expression: String) throws -> String {
         var expr = expression
         
         // Process each function type
@@ -459,6 +490,212 @@ class CalculatorEngine {
         
         if regex.firstMatch(in: name, options: [], range: range) == nil {
             throw CalculatorError.invalidVariableName(name)
+        }
+    }
+    
+    func getVariable(_ name: String) -> Double? {
+        return variableManager.getVariable(name)
+    }
+    
+    func setVariable(_ name: String, value: Double) {
+        variableManager.setVariable(name, value: value)
+    }
+    
+    func removeVariable(_ name: String) {
+        variableManager.removeVariable(name)
+    }
+    
+    func evaluateExpression(_ expression: String) throws -> Double {
+        return try parser.parse(expression, previousAnswer: previousAnswer)
+    }
+    
+    func evaluateExpressionForPlotting(_ expression: String) throws -> Double {
+        // Special handling for plotting - don't apply the problematic pattern checks
+        var expr = expression.trimmed
+        
+        // Replace previous answer
+        if let answer = previousAnswer {
+            expr = expr.replacingOccurrences(of: "ans", with: String(answer))
+        }
+        
+        // Replace constants
+        for (name, value) in parser.constants {
+            expr = expr.replacingOccurrences(of: name, with: String(value))
+        }
+        
+        // Replace variables
+        for (name, value) in variableManager.getAllVariables() {
+            expr = expr.replacingOccurrences(of: name, with: String(value))
+        }
+        
+        // Handle scientific notation
+        expr = try parser.processScientificNotation(expr)
+        
+        // Fix decimal formats
+        expr = try parser.fixDecimalFormats(expr)
+        
+        // Process functions
+        expr = try parser.processFunctions(expr)
+        
+        // Handle power operator (^ to **)
+        expr = expr.replacingOccurrences(of: "^", with: "**")
+        
+        // Create and evaluate NSExpression
+        let nsExpression = NSExpression(format: expr)
+        
+        guard let evaluatedResult = nsExpression.expressionValue(with: nil, context: nil) as? NSNumber else {
+            throw CalculatorError.invalidExpression(message: "无法计算表达式")
+        }
+        
+        let doubleResult = evaluatedResult.doubleValue
+        
+        // Check for division by zero or invalid results
+        guard doubleResult.isFinite else {
+            if doubleResult.isInfinite {
+                throw CalculatorError.divisionByZero
+            } else {
+                throw CalculatorError.invalidExpression(message: "计算结果无效")
+            }
+        }
+        
+        return doubleResult
+    }
+}
+
+// MARK: - Function Plotter
+class FunctionPlotter {
+    private let calculator: CalculatorEngine
+    private let width: Int
+    private let height: Int
+    
+    init(calculator: CalculatorEngine, width: Int = 80, height: Int = 24) {
+        self.calculator = calculator
+        self.width = width
+        self.height = height
+    }
+    
+    func plotFunction(_ functionExpression: String, xMin: Double = -10, xMax: Double = 10) throws -> String {
+        // 解析函数表达式，支持 draw(y=f(x)) 格式
+        var expression = functionExpression.trimmed
+        
+        // 移除 draw( 和 ) 包装
+        if expression.hasPrefix("draw(") && expression.hasSuffix(")") {
+            expression = String(expression.dropFirst(5).dropLast(1))
+        }
+        
+        // 移除 y= 前缀
+        if expression.hasPrefix("y=") {
+            expression = String(expression.dropFirst(2))
+        }
+        
+        expression = expression.trimmed
+        
+        var plot = Array(repeating: Array(repeating: " ", count: width), count: height)
+        
+        // 计算步长
+        let xStep = (xMax - xMin) / Double(width - 1)
+        let yValues = try calculateYValues(expression: expression, xMin: xMin, xMax: xMax, step: xStep)
+        
+        // 过滤无效值
+        let validYValues = yValues.filter { $0.isFinite }
+        guard !validYValues.isEmpty else {
+            return "函数无有效值，无法绘制图像"
+        }
+        
+        // 找到y值的范围
+        let yMin = validYValues.min()!
+        let yMax = validYValues.max()!
+        let yRange = yMax - yMin
+        
+        // 避免除零
+        guard yRange > 0.0001 else {
+            return "函数值变化范围太小，无法绘制图像"
+        }
+        
+        // 绘制坐标轴
+        drawAxes(&plot, xMin: xMin, xMax: xMax, yMin: yMin, yMax: yMax)
+        
+        // 绘制函数曲线
+        for (i, y) in yValues.enumerated() {
+            if y.isFinite {
+                let plotY = Int((yMax - y) / yRange * Double(height - 1))
+                if plotY >= 0 && plotY < height && i >= 0 && i < width {
+                    plot[plotY][i] = "*"
+                }
+            }
+        }
+        
+        // 转换为字符串
+        var result = ""
+        for row in plot {
+            result += row.joined() + "\n"
+        }
+        
+        // 添加坐标信息
+        result += "X: [\(String(format: "%.2f", xMin)), \(String(format: "%.2f", xMax))]  "
+        result += "Y: [\(String(format: "%.2f", yMin)), \(String(format: "%.2f", yMax))]\n"
+        result += "函数: y = \(expression)\n"
+        
+        return result
+    }
+    
+    private func calculateYValues(expression: String, xMin: Double, xMax: Double, step: Double) throws -> [Double] {
+        var yValues: [Double] = []
+        var x = xMin
+        
+        while x <= xMax {
+            // 临时设置 x 变量
+            let originalX = calculator.getVariable("x")
+            calculator.setVariable("x", value: x)
+            
+            do {
+                let y = try calculator.evaluateExpressionForPlotting(expression)
+                yValues.append(y)
+            } catch {
+                yValues.append(Double.nan)
+            }
+            
+            // 恢复原始 x 值
+            if let originalValue = originalX {
+                calculator.setVariable("x", value: originalValue)
+            } else {
+                calculator.removeVariable("x")
+            }
+            
+            x += step
+        }
+        
+        return yValues
+    }
+    
+    private func drawAxes(_ plot: inout [[String]], xMin: Double, xMax: Double, yMin: Double, yMax: Double) {
+        // 绘制 Y 轴（x=0的位置）
+        if xMin <= 0 && xMax >= 0 {
+            let xZeroIndex = Int((-xMin) / (xMax - xMin) * Double(width - 1))
+            if xZeroIndex >= 0 && xZeroIndex < width {
+                for row in 0..<height {
+                    plot[row][xZeroIndex] = "|"
+                }
+            }
+        }
+        
+        // 绘制 X 轴（y=0的位置）
+        if yMin <= 0 && yMax >= 0 {
+            let yZeroIndex = Int((yMax - 0) / (yMax - yMin) * Double(height - 1))
+            if yZeroIndex >= 0 && yZeroIndex < height {
+                for col in 0..<width {
+                    plot[yZeroIndex][col] = "-"
+                }
+            }
+        }
+        
+        // 绘制原点
+        if xMin <= 0 && xMax >= 0 && yMin <= 0 && yMax >= 0 {
+            let xZeroIndex = Int((-xMin) / (xMax - xMin) * Double(width - 1))
+            let yZeroIndex = Int((yMax - 0) / (yMax - yMin) * Double(height - 1))
+            if xZeroIndex >= 0 && xZeroIndex < width && yZeroIndex >= 0 && yZeroIndex < height {
+                plot[yZeroIndex][xZeroIndex] = "+"
+            }
         }
     }
 }
