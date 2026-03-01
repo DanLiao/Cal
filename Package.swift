@@ -7,7 +7,7 @@ let package = Package(
         .macOS(.v11)
     ],
     products: [
-        .executable(name: "Cal", targets: ["Cal"])
+        .executable(name: "calc", targets: ["Cal"])
     ],
     dependencies: [
         .package(url: "https://github.com/nicklockwood/Expression", from: "0.13.0")
