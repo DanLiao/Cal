@@ -72,6 +72,27 @@ venv.bak/
 
 # App Bundle (compiled)
 Cal.app/
+*.icns
+*.png
+
+# Build scripts and app bundle resources (local use only)
+build_app.sh
+Info.plist
+InfoPlist.strings
+
+# Old / legacy files
+Cal.swift
+Calc/
+Cal的替身
+使用说明.md
+
+# Test scripts and data
+run_test.sh
+test_calculator.sh
+test_arrow_keys.sh
+test_new_calculator.sh
+test_float.txt
+test.txt
 
 # Generated Python script for icon
 generate_van_gogh_calculator_icon.py

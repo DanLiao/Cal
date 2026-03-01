@@ -1,168 +1,143 @@
-# Swift Calculator v2.0
+# Cal — Swift 命令行计算器
 
-一个用 Swift 编写的高级命令行计算器，采用现代化模块化架构设计。
+一个用 Swift 编写的命令行计算器，支持变量、科学函数、函数绘图和历史记录。
 
-## ✨ 新特性 v2.0
+## 安装
 
-- 🏗️ **模块化架构**: 采用策略模式、命令模式和观察者模式
-- 🔢 **变量支持**: `let x = 5` 定义变量，支持复杂表达式
-- 🎨 **函数绘图**: `draw(y=f(x))` 绘制ASCII函数图像
-- 📊 **科学计数法**: 支持 `1.5e3`, `2E-4` 等格式
-- 🧮 **丰富的数学函数**: 新增 `abs`, `round`, `ceil`, `floor`, `factorial`, `log10`
-- 🚀 **性能优化**: 预编译正则表达式，优化字符串操作
-- 🛡️ **增强安全性**: 更严格的输入验证和错误处理
-- 🧪 **单元测试**: 完整的测试覆盖
-- 💾 **智能历史**: 改进的历史记录管理
+### 下载预编译二进制（推荐）
 
-## 📁 项目结构
+在 [Releases](https://github.com/DanLiao/Cal/releases) 页面下载最新版 `Cal`，然后：
+
+```bash
+chmod +x Cal
+./Cal
+```
+
+> 要求：macOS 11+（Apple Silicon / Intel 均支持）
+
+### 从源码编译
+
+```bash
+git clone https://github.com/DanLiao/Cal.git
+cd Cal
+swift build -c release
+.build/release/Cal
+```
+
+## 使用示例
+
+```
+>> 2 + 3 * 4          # 基本运算       → 14
+>> sqrt(16)           # 数学函数       → 4.0
+>> sin(pi / 2)        # 三角函数       → 1.0
+>> factorial(10)      # 阶乘           → 3628800.0
+>> let x = 5          # 定义变量       → 5.0
+>> x^2 + 1            # 使用变量       → 26.0
+>> ans * 2            # 使用上次结果   → 52.0
+>> draw(y=sin(x))     # 绘制函数图像
+```
+
+## 支持的功能
+
+### 运算符
+
+| 运算符 | 说明 | 示例 |
+|--------|------|------|
+| `+` `-` `*` `/` | 四则运算 | `10 / 3` |
+| `^` | 幂运算 | `2^10` → 1024 |
+| `(` `)` | 括号 | `(2 + 3) * 4` |
+
+### 数学函数
+
+| 函数 | 说明 |
+|------|------|
+| `sqrt(x)` | 平方根 |
+| `abs(x)` | 绝对值 |
+| `pow(x, y)` | x 的 y 次方 |
+| `log(x)` | 自然对数 |
+| `log10(x)` `log2(x)` | 常用对数 / 二进制对数 |
+| `exp(x)` | e 的 x 次方 |
+| `sin(x)` `cos(x)` `tan(x)` | 三角函数（弧度） |
+| `asin(x)` `acos(x)` `atan(x)` | 反三角函数 |
+| `atan2(y, x)` | 两参数反正切 |
+| `round(x)` `ceil(x)` `floor(x)` | 舍入函数 |
+| `min(x, y)` `max(x, y)` | 最值 |
+| `factorial(x)` | 阶乘（整数，最大 20） |
+
+### 数学常量
+
+| 常量 | 值 |
+|------|----|
+| `pi` | 3.14159265358979… |
+| `e` | 2.71828182845904… |
+| `tau` | 2π |
+| `golden` | 黄金比例 1.61803… |
+
+### 变量系统
+
+```
+>> let x = 10
+>> let y = x * 2
+>> vars               # 列出所有变量
+>> ans                # 查看上次结果
+```
+
+### 函数绘图
+
+使用 `draw(y=表达式)` 在终端绘制 ASCII 函数图像，自动适配终端尺寸：
+
+```
+>> draw(y=x^2)
+>> draw(y=sin(x))
+>> draw(y=log(x))
+>> draw(y=2*x+1)
+```
+
+### 命令
+
+| 命令 | 说明 |
+|------|------|
+| `help` / `h` / `?` | 显示帮助 |
+| `clear` / `cls` | 清屏 |
+| `history` | 查看计算历史 |
+| `record` | 保存历史到文件（`record/` 目录） |
+| `vars` / `variables` | 查看所有变量 |
+| `ans` | 查看上次结果 |
+| `quit` / `exit` / `q` | 退出 |
+
+方向键 ↑ ↓ 可浏览历史命令，← → 可移动光标。
+
+## 项目结构
 
 ```
 Cal/
-├── Sources/Cal/           # 主要源代码 (模块化架构)
-│   ├── main.swift         # 程序入口点
-│   ├── Calculator.swift   # 核心计算引擎
-│   ├── UI.swift          # 用户界面管理
-│   ├── FileManager.swift # 文件和历史管理
-│   ├── Extensions.swift  # 实用扩展
-│   └── CommandProcessor.swift # 命令处理器
-├── Tests/CalTests/        # 单元测试
-├── Cal.swift             # 旧版本 (保留作备份)
-├── Package.swift         # Swift包配置
-├── build_app.sh          # 构建脚本
-└── 使用说明.md           # 详细使用说明
+├── Sources/Cal/
+│   ├── main.swift              # 程序入口、终端输入、历史导航
+│   ├── Calculator.swift        # 计算引擎、表达式解析、函数绘图
+│   ├── ExpressionBridge.swift  # Expression 库桥接（解决命名冲突）
+│   ├── CommandProcessor.swift  # 命令解析与执行（命令模式）
+│   ├── UI.swift                # 终端界面输出
+│   ├── FileManager.swift       # 历史记录持久化
+│   └── Extensions.swift        # 工具扩展
+├── Tests/CalTests/
+│   └── CalculatorTests.swift   # 单元测试
+├── Package.swift               # Swift Package Manager 配置
+└── record/                     # 历史记录保存目录
 ```
 
-## 🚀 快速开始
+## 技术细节
 
-### 编译和运行
+- **表达式求值**：使用 [nicklockwood/Expression](https://github.com/nicklockwood/Expression) 库，替代 `NSExpression`，支持更多函数和运算符
+- **命名冲突解决**：`ExpressionBridge.swift` 仅 `import Expression`（不导入 Foundation），通过类型别名（`CalcExpression` 等）暴露给全模块，规避 macOS 15 引入的 `Foundation.Expression` 冲突
+- **设计模式**：命令模式（`Command`）、策略模式（`MathFunctionStrategy`）
+- **终端适配**：通过 `ioctl(TIOCGWINSZ)` 自动检测终端尺寸，绘图自动缩放
 
-```bash
-# 使用 Swift Package Manager
-swift build
-swift run Cal
-
-# 或构建为应用程序
-./build_app.sh
-```
-
-### 基本用法
-
-```
->> 2 + 3 * 4          # 基本运算: 14
->> sqrt(16)           # 数学函数: 4
->> let x = 5          # 定义变量: 5
->> x * 2 + 1          # 使用变量: 11
->> 1.5e3              # 科学计数法: 1500
->> ans * 2            # 使用上次结果
->> draw(y=x^2)        # 绘制函数图像
-```
-
-## 🧮 支持的功能
-
-### 基本运算
-- `+` `-` `*` `/` `^` (幂运算)
-- 括号优先级: `(2 + 3) * 4`
-
-### 数学函数
-| 函数 | 描述 | 示例 |
-|------|------|------|
-| `sqrt(x)` | 平方根 | `sqrt(16)` → 4 |
-| `abs(x)` | 绝对值 | `abs(-5)` → 5 |
-| `pow(x,y)` | x的y次方 | `pow(2,3)` → 8 |
-| `log(x)` | 自然对数 | `log(e)` → 1 |
-| `log10(x)` | 常用对数 | `log10(100)` → 2 |
-| `sin(x)`, `cos(x)`, `tan(x)` | 三角函数 | `sin(0)` → 0 |
-| `round(x)` | 四舍五入 | `round(3.7)` → 4 |
-| `ceil(x)` | 向上取整 | `ceil(3.1)` → 4 |
-| `floor(x)` | 向下取整 | `floor(3.9)` → 3 |
-| `factorial(x)` | 阶乘 | `factorial(5)` → 120 |
-
-### 常量
-- `pi` - 圆周率 (3.14159...)
-- `e` - 自然对数底 (2.71828...)
-- `tau` - 2π
-- `golden` - 黄金比例
-
-### 变量系统
-```
->> let x = 10         # 定义变量
->> let y = x * 2      # 使用其他变量
->> vars               # 显示所有变量
-```
-
-### 🎨 函数绘图
-```
->> draw(y=x^2)        # 绘制二次函数抛物线
->> draw(y=sin(x))     # 绘制正弦波形
->> draw(y=2*x+1)      # 绘制线性函数
->> draw(y=log(x))     # 绘制对数函数
->> draw(y=sqrt(x))    # 绘制平方根函数
-```
-
-**绘图特性**:
-- 80x24字符ASCII图像
-- 自动坐标轴和原点标记
-- 智能范围缩放
-- 支持所有数学函数
-- 显示坐标范围信息
-
-### 命令
-- `help` - 显示帮助
-- `clear` - 清屏
-- `history` - 显示历史
-- `record` - 保存历史到文件
-- `vars` - 显示变量
-- `ans` - 显示上次结果
-- `draw(y=f(x))` - 绘制函数图像
-- `quit` - 退出
-
-## 🧪 运行测试
+## 运行测试
 
 ```bash
 swift test
 ```
 
-## 🏗️ 架构特点
+## 许可证
 
-### 设计模式
-- **策略模式**: 数学函数的可插拔实现
-- **命令模式**: 统一的命令处理接口
-- **观察者模式**: 历史记录变更通知
-
-### 性能优化
-- 预编译正则表达式缓存
-- 高效的字符串操作
-- 智能表达式解析
-
-### 错误处理
-- 详细的错误类型定义
-- 位置精确的错误提示
-- 安全的输入验证
-
-## 📈 改进对比
-
-| 特性 | v1.0 | v2.0 |
-|------|------|------|
-| 代码行数 | 690行单文件 | 6个模块化文件 |
-| 数学函数 | 6个 | 12个 |
-| 函数绘图 | 无 | ASCII图像绘制 |
-| 错误类型 | 6种 | 8种详细类型 |
-| 错误处理 | 基础异常 | 全面捕获+友好提示 |
-| 测试覆盖 | 无 | 完整单元测试 |
-| 变量支持 | 仅ans | 完整变量系统 |
-| 性能 | 基础 | 优化的正则和字符串处理 |
-
-## 📄 许可证
-
-本项目使用 MIT 许可证。
-
-## 🤝 贡献
-
-欢迎提交 Pull Request 和 Issue！
-
-### 开发指南
-1. Fork 项目
-2. 创建功能分支
-3. 添加测试
-4. 提交更改
-5. 创建 Pull Request
+MIT License
