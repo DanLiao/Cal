@@ -74,4 +74,10 @@ venv.bak/
 Cal.app/
 
 # Generated Python script for icon
-generate_van_gogh_calculator_icon.py 
+generate_van_gogh_calculator_icon.py
+
+# Claude Code settings (local only)
+.claude/
+
+# Compiled binary in root
+/cal

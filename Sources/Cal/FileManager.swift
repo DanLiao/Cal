@@ -30,7 +30,9 @@ class HistoryManager: ObservableObject {
     }
     
     func getFormattedHistory() -> [String] {
-        return historyEntries.map { "\($0.input) = \($0.result.formattedString)" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return historyEntries.map { "[\(formatter.string(from: $0.timestamp))] \($0.input) = \($0.result.formattedString)" }
     }
     
     private func notifyObservers() {
@@ -91,18 +93,23 @@ class FileOperationsManager {
     private func getRecordDirectory() -> String? {
         // Try environment variable first
         if let appPath = ProcessInfo.processInfo.environment["APP_PATH"] {
-            let appDirPath = URL(fileURLWithPath: appPath).deletingLastPathComponent().path
-            return "\(appDirPath)/record"
+            return URL(fileURLWithPath: appPath)
+                .deletingLastPathComponent()
+                .appendingPathComponent("record").path
         }
-        
-        // Try fixed path
-        let fixedPath = "/Volumes/M4backup/Cal/record"
-        if FileManager.default.fileExists(atPath: fixedPath) {
-            return fixedPath
+
+        // Try directory relative to the executable
+        let executableDir = URL(fileURLWithPath: CommandLine.arguments[0])
+            .standardized
+            .deletingLastPathComponent()
+        let executableRelative = executableDir.appendingPathComponent("record").path
+        if FileManager.default.fileExists(atPath: executableRelative) {
+            return executableRelative
         }
-        
-        // Use current directory as fallback
-        return "record"
+
+        // Use current working directory as fallback
+        return URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            .appendingPathComponent("record").path
     }
     
     private func createDirectoryIfNeeded(_ path: String) -> FileError? {

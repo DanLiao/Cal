@@ -51,18 +51,6 @@ class QuitCommand: Command {
     
     func execute() throws -> CommandResult {
         displayManager.showGoodbye()
-        
-        #if os(macOS)
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/bin/bash")
-        let script = """
-        osascript -e 'tell application "Terminal" to close (every window whose frontmost is true)' & sleep 0.1 & kill -9 $PPID
-        """
-        process.arguments = ["-c", script]
-        try? process.run()
-        usleep(300000)
-        #endif
-        
         return .exit
     }
     
@@ -326,8 +314,7 @@ class CommandProcessor {
             return true
             
         } catch {
-            // 捕获所有未处理的异常
-            displayManager.showError(CalculatorError.invalidExpression(message: "输入格式错误，输入 help 查看帮助"))
+            displayManager.showError(CalculatorError.invalidExpression(message: error.localizedDescription))
             return true
         }
     }

@@ -6,6 +6,10 @@ import Darwin
 // MARK: - Application Configuration
 struct AppConfig {
     static let maxHistorySize = 50
+    static let maxFactorialInput = 20
+    static let plotDefaultWidth = 80
+    static let plotDefaultHeight = 24
+    static let plotMinYRange = 0.0001
     static let version = "2.0"
     static let appName = "Swift Calculator"
 }
@@ -223,18 +227,6 @@ class CalculatorApp {
         signal(SIGINT) { _ in
             let displayManager = DisplayManager()
             displayManager.showGoodbye()
-            
-            #if os(macOS)
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/bin/bash")
-            let script = """
-            osascript -e 'tell application "Terminal" to close (every window whose frontmost is true)' & sleep 0.1 & kill -9 $PPID
-            """
-            process.arguments = ["-c", script]
-            try? process.run()
-            usleep(300000)
-            #endif
-            
             exit(0)
         }
     }
